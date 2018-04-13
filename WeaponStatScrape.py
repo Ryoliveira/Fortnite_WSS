@@ -1,5 +1,4 @@
 # Created: 4/11/2018
-
 '''This program scrapes weapon stats from url: http://orcz.com/Fortnite_Battle_Royale:_Weapons
    These stats are stored in a database with a table for each weapon'''
 import requests
@@ -43,6 +42,22 @@ def grab_tables():
                 time.sleep(1)
 
 
+def data_insert(slot, data, cur, table_name):
+    if slot == 10:
+        cur.execute('''INSERT INTO {} (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
+                                           ReloadTime, AmmoCost, HeadShotDamage, StructureDamage)
+                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''.format(table_name), (*data,))
+    if slot == 9:
+        cur.execute('''INSERT INTO {} (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
+                                               ReloadTime, AmmoCost, StructureDamage)
+                                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'''.format(table_name), (*data,))
+
+
+def create_empty_table(slot, name, cur):
+    cur.execute("DROP TABLE IF EXISTS {}".format(name))
+    cur.execute('''CREATE TABLE {}({})'''.format(name, slot))
+
+
 def create_database(weapons):
     """Create Database with weapon stats provided from website"""
     con = sqlite3.connect('Weapons.DB')
@@ -60,58 +75,43 @@ def create_database(weapons):
                 StructureDamage TEXT'''
     # Assault Rifles
     # Column: 10
-    cur.execute("DROP TABLE IF EXISTS AssaultRifle")
-    cur.execute('''CREATE TABLE AssaultRifle({})'''.format(slot10))
-
+    table_name = 'AssaultRifle'
+    create_empty_table(slot10, table_name, cur)
     for assault_rifle in weapons[:10]:
-        cur.execute('''INSERT INTO AssaultRifle(Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
-                                           ReloadTime, AmmoCost, HeadShotDamage, StructureDamage)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (*assault_rifle,))
+        data_insert(10, assault_rifle, cur, table_name)
     # Sniper
     # Column: 10
-    cur.execute("DROP TABLE IF EXISTS Sniper")
-    cur.execute('''CREATE TABLE Sniper({})'''.format(slot10))
-
+    table_name = 'Sniper'
+    create_empty_table(slot10, table_name, cur)
     for sniper in weapons[10:17]:
-        cur.execute('''INSERT INTO Sniper (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
-                                           ReloadTime, AmmoCost, HeadShotDamage, StructureDamage)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (*sniper,))
+        data_insert(10, sniper, cur, table_name)
     # SMG
     # Column: 10
-    cur.execute("DROP TABLE IF EXISTS SubmachineGun")
-    cur.execute('''CREATE TABLE SubmachineGun({})'''.format(slot10))
-
+    table_name = 'SubmachineGun'
+    create_empty_table(slot10, table_name, cur)
     for smg in weapons[24:30]:
-        cur.execute('''INSERT INTO SubmachineGun (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
-                                           ReloadTime, AmmoCost, HeadShotDamage, StructureDamage)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (*smg,))
+        data_insert(10, smg, cur, table_name)
     # Pistol
     # Column: 10
-    cur.execute("DROP TABLE IF EXISTS Pistol")
-    cur.execute('''CREATE TABLE Pistol({})'''.format(slot10))
+    table_name = 'Pistol'
+    create_empty_table(slot10, table_name, cur)
 
     for pistol in weapons[32:42]:
-        cur.execute('''INSERT INTO Pistol (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
-                                           ReloadTime, AmmoCost, HeadShotDamage, StructureDamage)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (*pistol,))
+        data_insert(10, pistol, cur, table_name)
     # CrossBow
     # Column: 10
-    cur.execute("DROP TABLE IF EXISTS CrossBow")
-    cur.execute('''CREATE TABLE CrossBow({})'''.format(slot10))
+    table_name = 'CrossBow'
+    create_empty_table(slot10, table_name, cur)
 
     for crossbow in weapons[42:44]:
-        cur.execute('''INSERT INTO CrossBow (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
-                                           ReloadTime, AmmoCost, HeadShotDamage, StructureDamage)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (*crossbow,))
+        data_insert(10, crossbow, cur, table_name)
     # MiniGun
     # Column: 10
-    cur.execute("DROP TABLE IF EXISTS MiniGun")
-    cur.execute('''CREATE TABLE MiniGun({})'''.format(slot10))
+    table_name = 'MiniGun'
+    create_empty_table(slot10, table_name, cur)
 
     for minigun in weapons[30:31]:
-        cur.execute('''INSERT INTO MiniGun (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
-                                           ReloadTime, AmmoCost, HeadShotDamage, StructureDamage)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (*minigun,))
+        data_insert(10, minigun, cur, table_name)
     # Shotgun
     # Column: 9
     cur.execute("DROP TABLE IF EXISTS Shotgun")
@@ -143,22 +143,16 @@ def create_database(weapons):
                 StructureDamage TEXT'''
     # Rocket Launcher
     # Column: 9
-    cur.execute("DROP TABLE IF EXISTS RocketLauncher")
-    cur.execute('''CREATE TABLE RocketLauncher({})'''.format(slot9))
-
+    table_name = 'RocketLauncher'
+    create_empty_table(slot9, table_name, cur)
     for rocket_launcher in weapons[44:49]:
-        cur.execute('''INSERT INTO RocketLauncher (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
-                                           ReloadTime, AmmoCost, StructureDamage)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', (*rocket_launcher,))
+        data_insert(9, rocket_launcher, cur, table_name)
     # Grenade Launcher
     # Column: 9
-    cur.execute("DROP TABLE IF EXISTS GrenadeLauncher")
-    cur.execute('''CREATE TABLE GrenadeLauncher({})'''.format(slot9))
-
+    table_name = 'GrenadeLauncher'
+    create_empty_table(slot9, table_name, cur)
     for grenade_launcher in weapons[49:52]:
-        cur.execute('''INSERT INTO GrenadeLauncher (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
-                                           ReloadTime, AmmoCost, StructureDamage)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', (*grenade_launcher,))
+        data_insert(9, grenade_launcher, cur, table_name='GrenadeLauncher')
 
     # Grenade
     # Column: 7
