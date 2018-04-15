@@ -7,8 +7,46 @@ import sqlite3
 import sys
 import time
 
+# Weapon_name, (StartIndex, StopIndex), slots
+WEAPON_GROUPS = {
+                'AssaultRifle':(0, 10, 10),
+                'Sniper':(10, 17, 10),
+                'ShotGun':(17, 24, 9),
+                'SubmachineGun':(24, 30, 10),
+                'MiniGun':(30, 32, 10),
+                'Pistol':(32, 40, 10),
+                'CrossBow':(42, 44, 10),
+                'RocketLauncher':(44, 49, 9),
+                'GrenadeLauncher':(49, 52, 9),
+                'Grenade':(52, 56, 7),
+                'Other':(56, 57, 4)
+                }
 
-def grab_tables():
+
+def parse_tables(soup):
+    """Parse through table and grab weapon data"""
+    weapons = []
+    for table in soup.find_all('table', class_="wikitable")[1:-1]:
+        for tr in table.find_all('tr'):
+            stats = []  # Stats for current weapon
+            for td in tr.find_all("td"):
+                if td.text != ' ' and check(td.text.strip()):
+                    stats.append(td.text.strip())
+            if len(stats) > 1:
+                weapons.append(stats)
+    return weapons
+
+
+def check(text):
+    """Check whether text holds any of these flags"""
+    if text.startswith('egg'):
+        return False
+    if text in [' ', '0%', '???']:
+        return False
+    return True
+
+
+def grab_page():
     """Pull Weapon Stat info
        Returns list of weapons and corresponding stats"""
     connection_error = True
@@ -17,17 +55,7 @@ def grab_tables():
         try:
             r = requests.get('http://orcz.com/Fortnite_Battle_Royale:_Weapons')
             soup = BeautifulSoup(r.content, 'lxml')
-            weapons = []  # Each row is a different weapon with corresponding stats
-            for table in soup.find_all('table', class_="wikitable")[1:-1]:
-                for tr in table.find_all('tr'):
-                    stats = []  # Stats for current weapon
-                    for td in tr.find_all("td"):
-                        if td.text != ' ' and td.text.strip() != '0%' \
-                                and td.text.strip() != '???' and not td.text.strip().startswith("egg"):
-                            stats.append(td.text.strip())
-                    if len(stats) > 1:
-                        weapons.append(stats)
-            return weapons
+            return soup
         except requests.exceptions.RequestException as e:
             print(e)
             print("Error with internet connection."
@@ -42,153 +70,103 @@ def grab_tables():
                 time.sleep(1)
 
 
-def data_insert(slot, data, cur, table_name):
+def choose_slots(slot, name):
+    """Changes slot content for appropriate weapon"""
     if slot == 10:
-        cur.execute('''INSERT INTO {} (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
-                                           ReloadTime, AmmoCost, HeadShotDamage, StructureDamage)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''.format(table_name), (*data,))
+        slot = '''Weapon TEXT,
+                    Rarity TEXT,
+                    Dps TEXT,
+                    Damage TEXT,
+                    FireRate TEXT,
+                    MagSize TEXT,
+                    ReloadTime TEXT,
+                    AmmoCost TEXT,
+                    HeadShotDamage TEXT,
+                    StructureDamage TEXT'''
+
     if slot == 9:
-        cur.execute('''INSERT INTO {} (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
-                                               ReloadTime, AmmoCost, StructureDamage)
-                                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'''.format(table_name), (*data,))
+        slot = '''Weapon TEXT,
+                    Rarity TEXT,
+                    Dps TEXT,
+                    Damage TEXT,
+                    FireRate TEXT,
+                    MagSize TEXT,
+                    ReloadTime TEXT,
+                    AmmoCost TEXT,
+                    StructureDamage TEXT'''
+
+    if name == 'Grenade':
+        slot = '''Weapon TEXT,
+                  Rarity TEXT,
+                  Dps TEXT,
+                  Damage TEXT,
+                  CritChance TEXT,
+                  CritDamage TEXT,
+                  StructureDamage TEXT'''
+
+    if name == 'ShotGun':
+        slot = '''Weapon TEXT,
+                    Rarity TEXT,
+                    Dps TEXT,
+                    Damage TEXT,
+                    FireRate TEXT,
+                    MagSize TEXT,
+                    ReloadTime TEXT,
+                    HeadShotDamage TEXT,
+                    StructureDamage TEXT'''
+    if name == 'Other':
+        slot = '''
+                Weapon TEXT,
+                Rarity TEXT,
+                Damage TEXT,
+                StructureDamage TEXT'''
+    return slot
 
 
-def create_empty_table(slot, name, cur):
+def create_empty_table(name, slot, cur):
+    """Creates empty table for weapon type"""
+    current_slot = choose_slots(slot, name)
     cur.execute("DROP TABLE IF EXISTS {}".format(name))
-    cur.execute('''CREATE TABLE {}({})'''.format(name, slot))
+    cur.execute('''CREATE TABLE {}({})'''.format(name, current_slot))
+
+
+def data_insert(weapon_data, table_name, slot, cur):
+    if table_name =='Other':
+        cur.execute('''INSERT INTO {} (Weapon, Rarity, Damage, StructureDamage)
+                                           VALUES (?, ?, ?, ?)'''.format(table_name), (*weapon_data,))
+    if table_name == 'Grenade':
+        cur.execute('''INSERT INTO {} (Weapon, Rarity, Dps, Damage, CritChance, CritDamage, StructureDamage)
+                                           VALUES (?, ?, ?, ?, ?, ?, ?)'''.format(table_name), (*weapon_data[:-1],))
+    if table_name == 'ShotGun':
+        cur.execute('''INSERT INTO {} (Weapon, Rarity, Dps, Damage, FireRate, MagSize,
+                                           ReloadTime, HeadShotDamage, StructureDamage)
+                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'''.format(table_name), (*weapon_data,))
+    elif slot == 10:
+        cur.execute('''INSERT INTO {} (Weapon, Rarity, Dps, Damage, FireRate, MagSize,
+                                           ReloadTime, AmmoCost, HeadShotDamage, StructureDamage)
+                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''.format(table_name), (*weapon_data,))
+    elif slot == 9:
+        cur.execute('''INSERT INTO {} (Weapon, Rarity, Dps, Damage, FireRate, MagSize,
+                                               ReloadTime, AmmoCost, StructureDamage)
+                                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'''.format(table_name), (*weapon_data,))
 
 
 def create_database(weapons):
     """Create Database with weapon stats provided from website"""
     con = sqlite3.connect('Weapons.DB')
     cur = con.cursor()
-
-    slot10 = '''Weapon TEXT,
-                Rarity TEXT,
-                Dps TEXT,
-                Damage TEXT,
-                FireRate TEXT,
-                MagSize TEXT,
-                ReloadTime TEXT,
-                AmmoCost TEXT,
-                HeadShotDamage TEXT,
-                StructureDamage TEXT'''
-    # Assault Rifles
-    # Column: 10
-    table_name = 'AssaultRifle'
-    create_empty_table(slot10, table_name, cur)
-    for assault_rifle in weapons[:10]:
-        data_insert(10, assault_rifle, cur, table_name)
-    # Sniper
-    # Column: 10
-    table_name = 'Sniper'
-    create_empty_table(slot10, table_name, cur)
-    for sniper in weapons[10:17]:
-        data_insert(10, sniper, cur, table_name)
-    # SMG
-    # Column: 10
-    table_name = 'SubmachineGun'
-    create_empty_table(slot10, table_name, cur)
-    for smg in weapons[24:30]:
-        data_insert(10, smg, cur, table_name)
-    # Pistol
-    # Column: 10
-    table_name = 'Pistol'
-    create_empty_table(slot10, table_name, cur)
-
-    for pistol in weapons[32:42]:
-        data_insert(10, pistol, cur, table_name)
-    # CrossBow
-    # Column: 10
-    table_name = 'CrossBow'
-    create_empty_table(slot10, table_name, cur)
-
-    for crossbow in weapons[42:44]:
-        data_insert(10, crossbow, cur, table_name)
-    # MiniGun
-    # Column: 10
-    table_name = 'MiniGun'
-    create_empty_table(slot10, table_name, cur)
-
-    for minigun in weapons[30:31]:
-        data_insert(10, minigun, cur, table_name)
-    # Shotgun
-    # Column: 9
-    cur.execute("DROP TABLE IF EXISTS Shotgun")
-    cur.execute('''CREATE TABLE Shotgun(
-                Weapon TEXT,
-                Rarity TEXT,
-                Dps TEXT,
-                Damage TEXT,
-                FireRate TEXT,
-                MagSize TEXT,
-                ReloadTime TEXT,
-                HeadShotDamage TEXT,
-                StructureDamage TEXT
-                )''')
-
-    for shotgun in weapons[17:24]:
-        cur.execute('''INSERT INTO Shotgun (Weapon, Rarity, Dps, Damage, FireRate, MagSize, 
-                                           ReloadTime, HeadShotDamage, StructureDamage)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', (*shotgun,))
-    # For explosive entries with 9 columns
-    slot9 = '''Weapon TEXT,
-                Rarity TEXT,
-                Dps TEXT,
-                Damage TEXT,
-                FireRate TEXT,
-                MagSize TEXT,
-                ReloadTime TEXT,
-                AmmoCost TEXT,
-                StructureDamage TEXT'''
-    # Rocket Launcher
-    # Column: 9
-    table_name = 'RocketLauncher'
-    create_empty_table(slot9, table_name, cur)
-    for rocket_launcher in weapons[44:49]:
-        data_insert(9, rocket_launcher, cur, table_name)
-    # Grenade Launcher
-    # Column: 9
-    table_name = 'GrenadeLauncher'
-    create_empty_table(slot9, table_name, cur)
-    for grenade_launcher in weapons[49:52]:
-        data_insert(9, grenade_launcher, cur, table_name='GrenadeLauncher')
-
-    # Grenade
-    # Column: 7
-    cur.execute("DROP TABLE IF EXISTS Grenade")
-    cur.execute('''CREATE TABLE Grenade(
-                Weapon TEXT,
-                Rarity TEXT,
-                Dps TEXT,
-                Damage TEXT,
-                CritChance TEXT,
-                CritDamage TEXT,
-                StructureDamage TEXT
-                )''')
-
-    for grenade in weapons[52:55]:
-        cur.execute('''INSERT INTO Grenade (Weapon, Rarity, Dps, Damage, CritChance, CritDamage, StructureDamage)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?)''', (*grenade,))
-
-    # Other
-    # Column: 4
-    cur.execute("DROP TABLE IF EXISTS Other")
-    cur.execute('''CREATE TABLE Other(
-                Weapon TEXT,
-                Rarity TEXT,
-                Damage TEXT,
-                StructureDamage TEXT
-                )''')
-
-    for other in weapons[55:56]:
-        cur.execute('''INSERT INTO Other (Weapon, Rarity, Damage, StructureDamage)
-                                           VALUES (?, ?, ?, ?)''', (*other,))
-
+    for weapon_name, (start, stop, slot) in WEAPON_GROUPS.items():
+        create_empty_table(weapon_name, slot, cur)
+        for weapon in weapons[start:stop]:
+            data_insert(weapon, weapon_name, slot, cur)
     con.commit()
     con.close()
 
 
 if __name__ == '__main__':
-    weapons = grab_tables()
+    print('Fetching Data...')
+    soup = grab_page()
+    print('Creating database...')
+    weapons = parse_tables(soup)
     create_database(weapons)
+    print("Database Created!")
