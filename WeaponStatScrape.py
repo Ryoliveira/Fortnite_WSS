@@ -9,17 +9,9 @@ import time
 
 # Weapon_name, (StartIndex, StopIndex), slots
 WEAPON_GROUPS = {
-                'AssaultRifle':(0, 10, 10),
-                'Sniper':(10, 17, 10),
-                'ShotGun':(17, 24, 9),
-                'SubmachineGun':(24, 30, 10),
-                'MiniGun':(30, 32, 10),
-                'Pistol':(32, 40, 10),
-                'CrossBow':(42, 44, 10),
-                'RocketLauncher':(44, 49, 9),
-                'GrenadeLauncher':(49, 52, 9),
-                'Grenade':(52, 56, 7),
-                'Other':(56, 57, 4)
+                'AssaultRifle':(0, 10, 10), 'Sniper':(10, 17, 10), 'ShotGun':(17, 24, 9), 'SubmachineGun':(24, 30, 10),
+                'MiniGun':(30, 32, 10), 'Pistol':(32, 40, 10), 'CrossBow':(42, 44, 10), 'RocketLauncher':(44, 49, 9),
+                'GrenadeLauncher':(49, 52, 9), 'Grenade':(52, 56, 7), 'Other':(56, 57, 4)
                 }
 
 
@@ -73,53 +65,21 @@ def grab_page():
 def choose_slots(slot, name):
     """Changes slot content for appropriate weapon"""
     if slot == 10:
-        slot = '''Weapon TEXT,
-                    Rarity TEXT,
-                    Dps TEXT,
-                    Damage TEXT,
-                    FireRate TEXT,
-                    MagSize TEXT,
-                    ReloadTime TEXT,
-                    AmmoCost TEXT,
-                    HeadShotDamage TEXT,
-                    StructureDamage TEXT'''
+        slot = '''Weapon TEXT, Rarity TEXT, Dps TEXT, Damage TEXT,FireRate TEXT, MagSize TEXT, ReloadTime TEXT,
+                  AmmoCost TEXT, HeadShotDamage TEXT, StructureDamage TEXT'''
 
     if slot == 9:
-        slot = '''Weapon TEXT,
-                    Rarity TEXT,
-                    Dps TEXT,
-                    Damage TEXT,
-                    FireRate TEXT,
-                    MagSize TEXT,
-                    ReloadTime TEXT,
-                    AmmoCost TEXT,
-                    StructureDamage TEXT'''
+        slot = '''Weapon TEXT, Rarity TEXT, Dps TEXT, Damage TEXT, FireRate TEXT, MagSize TEXT, ReloadTime TEXT,
+                  AmmoCost TEXT, StructureDamage TEXT'''
 
     if name == 'Grenade':
-        slot = '''Weapon TEXT,
-                  Rarity TEXT,
-                  Dps TEXT,
-                  Damage TEXT,
-                  CritChance TEXT,
-                  CritDamage TEXT,
-                  StructureDamage TEXT'''
+        slot = '''Weapon TEXT, Rarity TEXT, Dps TEXT, Damage TEXT, CritChance TEXT, CritDamage TEXT, StructureDamage TEXT'''
 
     if name == 'ShotGun':
-        slot = '''Weapon TEXT,
-                    Rarity TEXT,
-                    Dps TEXT,
-                    Damage TEXT,
-                    FireRate TEXT,
-                    MagSize TEXT,
-                    ReloadTime TEXT,
-                    HeadShotDamage TEXT,
-                    StructureDamage TEXT'''
+        slot = '''Weapon TEXT, Rarity TEXT, Dps TEXT, Damage TEXT, FireRate TEXT, MagSize TEXT, ReloadTime TEXT,
+                  HeadShotDamage TEXT, StructureDamage TEXT'''
     if name == 'Other':
-        slot = '''
-                Weapon TEXT,
-                Rarity TEXT,
-                Damage TEXT,
-                StructureDamage TEXT'''
+        slot = ''' Weapon TEXT, Rarity TEXT, Damage TEXT, StructureDamage TEXT'''
     return slot
 
 
@@ -151,22 +111,22 @@ def data_insert(weapon_data, table_name, slot, cur):
                                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'''.format(table_name), (*weapon_data,))
 
 
-def create_database(weapons):
+def create_database(weapons, cur):
     """Create Database with weapon stats provided from website"""
-    con = sqlite3.connect('Weapons.DB')
-    cur = con.cursor()
     for weapon_name, (start, stop, slot) in WEAPON_GROUPS.items():
         create_empty_table(weapon_name, slot, cur)
         for weapon in weapons[start:stop]:
             data_insert(weapon, weapon_name, slot, cur)
-    con.commit()
-    con.close()
 
 
 if __name__ == '__main__':
+    con = sqlite3.connect('Weapons.DB')
+    cur = con.cursor()
     print('Fetching Data...')
     soup = grab_page()
     print('Creating database...')
     weapons = parse_tables(soup)
-    create_database(weapons)
+    create_database(weapons, cur)
     print("Database Created!")
+    con.commit()
+    con.close()
