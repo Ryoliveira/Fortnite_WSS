@@ -1,3 +1,4 @@
+#! python3
 # Created: 4/11/2018
 '''This program scrapes weapon stats from url: http://orcz.com/Fortnite_Battle_Royale:_Weapons
    These stats are stored in a database with a table for each weapon'''
@@ -119,7 +120,7 @@ def create_database(weapons, cur):
             data_insert(weapon, weapon_name, slot, cur)
 
 
-if __name__ == '__main__':
+def main():
     con = sqlite3.connect('Weapons.DB')
     cur = con.cursor()
     print('Fetching Data...')
@@ -130,3 +131,6 @@ if __name__ == '__main__':
     print("Database Created!")
     con.commit()
     con.close()
+
+if __name__ == '__main__':
+    main()
