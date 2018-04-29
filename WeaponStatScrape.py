@@ -11,8 +11,8 @@ import time
 # Weapon_name, (StartIndex, StopIndex), slots
 WEAPON_GROUPS = {
                 'AssaultRifle':(0, 10, 10), 'Sniper':(10, 17, 10), 'ShotGun':(17, 24, 9), 'SubmachineGun':(24, 30, 10),
-                'MiniGun':(30, 32, 10), 'Pistol':(32, 40, 10), 'CrossBow':(42, 44, 10), 'RocketLauncher':(44, 49, 9),
-                'GrenadeLauncher':(49, 52, 9), 'Grenade':(52, 56, 7), 'Other':(56, 57, 4)
+                'MiniGun':(30, 34, 10), 'Pistol':(34, 44, 10), 'CrossBow':(44, 46, 10), 'RocketLauncher':(46, 49, 9),
+                'GrenadeLauncher':(49, 52, 9), 'Grenade':(52, 56, 7), 'Other':(57, 58, 4)
                 }
 
 
@@ -68,14 +68,11 @@ def choose_slots(slot, name):
     if slot == 10:
         slot = '''Weapon TEXT, Rarity TEXT, Dps TEXT, Damage TEXT,FireRate TEXT, MagSize TEXT, ReloadTime TEXT,
                   AmmoCost TEXT, HeadShotDamage TEXT, StructureDamage TEXT'''
-
     if slot == 9:
         slot = '''Weapon TEXT, Rarity TEXT, Dps TEXT, Damage TEXT, FireRate TEXT, MagSize TEXT, ReloadTime TEXT,
                   AmmoCost TEXT, StructureDamage TEXT'''
-
     if name == 'Grenade':
         slot = '''Weapon TEXT, Rarity TEXT, Dps TEXT, Damage TEXT, CritChance TEXT, CritDamage TEXT, StructureDamage TEXT'''
-
     if name == 'ShotGun':
         slot = '''Weapon TEXT, Rarity TEXT, Dps TEXT, Damage TEXT, FireRate TEXT, MagSize TEXT, ReloadTime TEXT,
                   HeadShotDamage TEXT, StructureDamage TEXT'''
